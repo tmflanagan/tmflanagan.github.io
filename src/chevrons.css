@@ -1,0 +1,46 @@
+
+.chevron-top {
+    position:relative;
+    display:block;
+    height:20px; /*Height should be double border thickness*/
+}
+.chevron-top::before,
+.chevron-top::after {
+    position:absolute;
+    display:block;
+    content:"";
+    border:10px solid transparent; /*Adjust chevron size*/
+}
+
+i.chevron-top::before {
+  top: 0;
+  border-top-color: #b2b2b2;
+}
+
+i.chevron-top::after {
+  top:-10px;
+  border-top-color: #191919;
+}
+
+.chevron-bottom {
+    position:relative;
+    display:block;
+    height:20px; /*Height should be double border thickness*/
+}
+.chevron-bottom::before,
+.chevron-bottom::after {
+    position:absolute;
+    display:block;
+    content:"";
+    border:10px solid transparent; /*Adjust chevron size*/
+}
+
+i.chevron-bottom::before {
+  bottom: 0;
+  border-bottom-color: #b2b2b2;
+}
+
+i.chevron-bottom::after {
+  bottom:-10px;
+  border-bottom-color: #191919;
+}

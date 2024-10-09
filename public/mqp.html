@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="./noscript.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+  <main class="container">
+    <div style="margin: 10px; position: sticky;">
+        <a class="nav" href="noscript.html">Home</a>
+        <a class="nav" href="mqp.html">MQP</a>
+        <a class="nav" href="microshare.html">Microshare</a>
+    </div>
+    <br /><br />
+    <div class="centered-text">
+        <div class="collapsible-title"><h1>MQP</h1></div>
+        <span>WPI requires each of its students complete a "Major Qualifying Project" (MQP) prior to graduation. This essentially constitutes a sort of hybrid between an internship and a capstone project, in which students are encouraged to perform some study or create an experimental prototype to further their field. For my MQP, I was involved in a four-person team building a wireless Electromyogram (EMG) monitor for the shoulder with at-home use in mind. My role on this personally had less to do with the EMG technology specifically; rather, I was developing the firmware for the on-board peripheral Adafruit Feather nRF52840 Express and central Nordic nRF52840-DK to transmit and receive the EMG data over bluetooth respectively. I also had to develop some MATLAB scripts in order to unpack the data from the central board and display it on a connected laptop.</span>
+        <br /><br />
+        <span>Due to this code being built upon earlier work done by our lab, I'm not able to make it freely available. However, a detailed explanation of its functionality can be found in </span>
+        <a href="https://digital.wpi.edu/concern/student_works/5425kg048">the report</a>
+        <span> we submitted summarizing our results. Naturally, this also explains the work that my collaborators performed in order to get the project working. Accordingly, I don't intend to write a replacement for that report here, rather a brief summary of the project and what I contributed to it.</span>
+        <br /><br />
+        <div class="collapsible-title"><h1>EMG Background</h1></div>
+        <span>Electromyography is the measurement of the electrical activity of skeletal muscle. The shoulder joint is the most mobile join in the human body and is especially prone to injury; recovery from surgery on it or injury can take months. The electrical signals sent through motor nerves depending on the muscle fibers involved in transmitting the signal and the effort necessary to contract the acting muscle. In a healthy patient, every muscle fiber in a motor unit will activate when one nerve in it does so. Essentially, if a muscle is at rest, the voltage across the tissue should be zero, while contraction will result in a number of action potentials being observed. Because of this, EMG can be used by a medical professional to asses the general function of a paitent's motor nerves and identify potential issues in muscle recovery.</span>
+        <br /><br />
+        <span>Typically, EMG is taken by inserting conductive electrodes into the muscle itself in the interest of accuracy. However, that approach would be unsuitable for at-home use by a layperson, so our project involved "surface EMG" electrodes, which are relatively noisy and lower voltage than traditional EMG. It is also vital in the case of surface EMG to ensure that the electrodes remain stationary. This is typically accomplished by using electrodes which stick to the skin, but to avoid the use of single-use parts, our prototype used a compressive tight-fitting sleeve to hold them onto the skin.</span>
+        <br /><br />
+        <div class="collapsible-title"><h1>Hardware Specifications</h1></div>
+        <span>Without any amplification, EMG signals range from frequencies between 20 and 800 hz and voltages between 0 and 10 mv, although our ADC could only detect a minimum voltage of 10 microvolts. Typically noise from various sources will be present at a greater magnitude than this signal, which needs to be filtered out prior to reaching the microcontroller (MCU)'s analog-to-digital converter (ADC) for storage. Ultimately, the analog front-end built for our prototype consisted of an instrumentation amplifier, a 20Hz Butterworth high-pass filter, a selectable gain stage, an 800 Hz Butterworth low-pass filter, and a level shift to fit within the range of the Adafruit Feather's ADC. In the end, the Feather's ADC proved to be considerably inaccurate in comparision to a higher-resolution external ADC option, the Texas Instruments ADS1292, however implementing that into the design would have taken more development time than we had to spare, and shortened the battery life by drawing more power. Due to the limitations of our Bluetooth implementation sending one packet every 10 milliseconds, the maximum sampling rate for our ADC that we could actually send was 2280 Hz, which was enough to reach the Nyquist frequency of EMG but presents another limitation on the accuracy of the measurements.</span>
+        <br /><br />
+        <div class="collapsible-title"><h1>Firmware</h1></div>
+        <span>The firmware we inherited at the beginning of the project captured samples from one ADC channel at the default sampling rate of 1 kHz. It uses the interrupt raised every bluetooth connection interval to send one packet from a FIFO buffer consisting of the raw ADC output. The firmware on the central Nordic nRF52840-DK connects to the peripheral Feather board over Bluetooth Low Energy and raises an interrupt every connection interval to load all of the data in the antenna's buffer to send over UART via Micro-USB. The central microcontroller's firmware remanied unchanged for the duration of the project.</span>
+        <br /><br />
+        <span>The firmwares were built on top of the Zephyr kernel, which essentially functions as a library to provide mnemonics and helper functions which streamline the lower-level aspects of development. This mean that tasks like changing the sampling rate of the ADC were as simple as adding a line to the header indicating the sampling interval, and the bulk of the actual firmware programming was done to specify event interrupts and the behavior to follow once raised. Similarly, sampling from four ADC channels (one for each of the electrodes added on the anteroir deltoid, trapezius, infraspinitus, and pectoralis major for shoulder monitoring) involved adding a Zephyr specification for those four pins in an array it uses to initialize the ADC for them and can loop through to sample them. In our case, the ADC sampling loop also writes the channel a given datum is measured from in the 2 uppermost bits, which otherwise go unused with the 12-bit ADC.</span>
+        <br /><br />
+        <span>The built-in functionality for oversampling built into the nRF52840 specification performs an averaging operation over every ADC channel at once, which would lead to incorrect data being stored in cases like ours where multiple unrelated channels need to sample in parallel. Because of this, in the name of testing the optimal accuracy for the Feather board's ADC I created a software oversampling implementation in the peripheral firmware. Some behavior was added to the sampling interrupt function which runs through a for loop some power of two times, and the sum of all of these samples gets bit-shifted back down to the 12-bit ADC resolution. In other words, it performs a number of samples as fast as possible and averages them together with the ALU as opposed to whatever the Nordic implementation does which involves averaging across all channels. This does introduce some performance overhead into the firmware, so we ultimately found it more reliably performed with a sampling rate of 2 kHz as opposed to the theoretical maximum 2280 Hz for our implementation.</span>
+        <br /><br />
+        <div class="collapsible-title"><h1>Software</h1></div>
+        <span>Beyond the microcontroller firmware, verifying the full-stack functionality required PC software to receive the UART data and display them in some graphical front-end. This was done with a series of MATLAB scripts for the convenience of its UART support and built-in mathematical & graphing functions. Less code was inherited for these, so they took up about as much development time as the firmware in spite of being less complex on the face of it.</span>
+        <br /><br />
+        <span>The first script, read_uart_stream, uses MATLAB's serialport interface to connect to a hard-coded USB port which the user plugs their nRF52840-DK into. It then runs a for loop until it receives a certain number of bytes over UART, at which point it writes all of the values and the lengths of each packet (encoded in metadata which we split off from the actual data) to a CSV file for storage. The second script, sync_data, finds the sync bytes where each UART packet actually begins and then reads out the correspondnig packet length number of bytes past that in order to store only the bytes of ADC data originally received by the central microcontroller. It then reshapes the data based on their channels from the upper 2 bits, filters out that channel information, and converts the ADC readouts to voltage values based on the 0-3.6v ADC range of the board.</span>
+        <br /><br />
+        <figure>
+            <img src="emgPlot.png" />
+            <figcaption>Smoothed MATLAB plots of an EMG signal as the wearer repeatedly performs a shoulder exercise. Note the repeated spikes at around the same point in time, likely correlated to a motor unit action potential.</figcaption>
+        </figure>
+        <br /><br />
+        <span>The third script was mostly developed by another member of the group to test an alternative external ADC, the TI-ADS1292, however in order to effectively compare its performance to the accuracy of the nRF52840 ADC, similar tests needed to be run for the data recorded on the Feather boards. This script, aptly named ENOB_script, calculates the effective number of bits of a dataset presuming that it records a sine wave. I adapted it to extract one channel of data from the read_uart_stream CSV and find the phase offset of the wave before running its error analysis for a sinusoidal regression. The oversampling implementation we used maxed out at 14.6 ENOB, while the ADS1292 was able to achieve 18.0 ENOB out of the box, so it is without a doubt an upgrade if implemented.</span>
+    </div>
+  </main>
+  </body>
+</html>
