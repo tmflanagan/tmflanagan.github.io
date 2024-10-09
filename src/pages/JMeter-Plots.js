@@ -1,5 +1,5 @@
-import assumptionCheck from "./cleanQQ.png";
-import migrationQQ from "./summary.png";
+import assumptionCheck from "./summary.png";
+import migrationQQ from "./cleanQQ.png";
 
 const Plots = () => {
   return (
@@ -20,11 +20,11 @@ const Plots = () => {
       <figure>
         <img src={assumptionCheck} />
         <figcaption>This correlation plot serves as the “proof of concept” for the program; for every app being loaded or the resource requested it’s evident that the distributions are generally affected drastically by the user load. In this sense the program can be used for checking assumptions in developing latency tests by comparing the results of slightly different ones as well as actually performing them.	 These results would indicate that later tests need to control for the user load while running tests.</figcaption>
-      </figure>
+      </figure><br />
       <span>The later part of my internship at Microshare concerned making recommendations for database optimizations on an as-yet unreleased application which was taking an unacceptably long time to load. This involved some minor changes to the script to adapt it to the new JMeter test, replacing the functionality for identifying the app being loaded with differentiating between the subdomain being accessed (all of the slowest requests were to the “workflow” subdomain as opposed to the API endpoint). However, unlike the proof of concept, the results being compared were dependent not on the JMeter test plan used but the changes made to the server. After a series of tests with different combinations of MySQL indexes and attempts to reduce unnecessary overhead, we ultimately found our solution while setting up a “control” server to test a new version of the application on. Consider these Q-Q plots comparing response times from an older server and this new one set up without any historical data migrated over yet:</span>
       <figure>
         <img src={migrationQQ} />
-      </figure>
+      </figure><br />
       <span>These correlations might appear somewhat strong but in fact their residuals are very highly correlated, implying there is some significant lurking variable impacting the results. However, even the longest load times in this new distribution are faster than the slowest ones in the one with the historical data, and our previous tests on the old server showed higher correlation while getting progressively slower. This means that the deletion of historical data affects how long the database takes to search for data and that turning off automatic archival would change the distribution while altogether making the application load faster. This additonally led to the decision to not back up the historical data onto the new server, which hasn’t had the issue of progressively getting slower since, although the lurking variable(s) identified with the Q-Q plots indicate some other area(s) for improvement not found during my internship. In summary, this plotting tool allows for an objective trial-and-error approach in web application optimization, provided one understands the differences in initial conditions between their JMeter test runs. </span>
     </>
   );
